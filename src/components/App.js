@@ -89,14 +89,13 @@ function App() {
         Api.deleteCard(card._id)
         .then (res=>{
             console.log (res)
-            setCards(cards.filter((c) => c._id !== card._id && c));
+            setCards ((prevState)=> prevState.filter((c) => c._id !== card._id && c));
         })
     }
 
     return (
         <CurrentUserContext.Provider value={currentUser}>
             <Header />
-
             
             <Main 
                 onEditProfile={handleEditProfileClick} 

@@ -4,7 +4,7 @@
 
 ## Используемые команды
 
-In the project directory, you can run:
+В папке с проектом можно запускать:
 
 ### `npm start`
 

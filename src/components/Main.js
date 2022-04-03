@@ -12,13 +12,22 @@ function Main(props) {
             <section className="profile">
                 <div className="profile__avatar-wrapper">
                     <img src={currentUser.avatar} alt="аватар" className="profile__avatar"/>
-                    <button type="button" className="profile__avatar-edit-button" onClick={props.onEditAvatar}></button>
+                    <button 
+                        type="button" 
+                        className="profile__avatar-edit-button" 
+                        onClick={props.onEditAvatar}>
+                    </button>
                 </div>
                 <div className="profile__info">
                     <div className="profile__info-name">
                         <h1 className="profile__title">{currentUser.name}</h1>
-                        <button type="button" className="profile__button profile__button_type_edit"
-                            title="Редактировать профиль" aria-label="Редактировать профиль" onClick={props.onEditProfile}></button>
+                        <button 
+                            type="button" 
+                            className="profile__button profile__button_type_edit"
+                            title="Редактировать профиль" 
+                            aria-label="Редактировать профиль" 
+                            onClick={props.onEditProfile}>
+                        </button>
                     </div>
                     <p className="profile__short-description">{currentUser.about}</p>
                 </div>

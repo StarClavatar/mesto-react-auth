@@ -1,23 +1,30 @@
 
+import { Route, Switch, Redirect, withRouter } from 'react-router-dom';
 import Header from './Header';
 import EditProfilePopup from './EditProfilePopup';
 import Main from './Main';
+import LogIn from './LogIn';
+import Register from './Register';
 import Footer from './Footer';
 import AddPlacePopup from './AddPlacePopup';
 import EditAvatarPopup from './EditAvatarPopup';
 import ImagePopup from './ImagePopup';
+import ProtectedRoute from './ProtectedRoute';
+import InfoToolTip from './InfoTooltip';
 import React from 'react';
 import Api from '../utils/Api';
+import * as Auth from '../utils/Auth';
 import { CurrentUserContext } from '../contexts/CurrentUserContext';
 
 
-function App() {
+function App(props) {
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = React.useState(false);
     const [isAddPlacePopupOpen, setIsAddPlacePopupOpen] = React.useState(false);
     const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = React.useState(false);
     const [currentUser, setCurrentUser] = React.useState({name:'',link:'',about:''});
     const [selectedCard, setSelectedCard] = React.useState(null);
     const [cards, setCards] = React.useState([]);
+    const [loggedIn,setLogIn] = React.useState(false);
     
     const handleEditProfileClick = () => { setIsEditProfilePopupOpen (true); } 
     const handleAddPlaceClick = () => { setIsAddPlacePopupOpen (true); } 
@@ -93,46 +100,85 @@ function App() {
         })
     }
 
+    function handleTokenCheck(){
+        const jwt = localStorage.getItem('jwt');
+        if (jwt) {
+            // проверяем токен пользователя
+            Auth.checkToken(jwt)
+            .then((res) => {
+                if (res) { 
+                    setLogIn(true,()=>props.history.push("/main")) 
+                }
+            })
+        }; 
+    }
+      
+    function handleLogin (){
+        setLogIn(true);
+    }
+      
+
     return (
         <CurrentUserContext.Provider value={currentUser}>
+
             <Header />
-            
-            <Main 
-                onEditProfile={handleEditProfileClick} 
-                onAddPlace={handleAddPlaceClick} 
-                onEditAvatar={handleEditAvatarClick} 
-                cards={cards}
-                onCardLike={handleCardLike}
-                onCardClick={handleCardClick}
-                onCardDelete={handleCardDelete}
-            />
 
-            <EditProfilePopup 
-                isOpen={isEditProfilePopupOpen} 
-                onUpdateUser={handleUpdateUser} 
-                onClose={closeAllPopups}
-            />  
+            <Switch>
 
-            <AddPlacePopup 
-                isOpen={isAddPlacePopupOpen} 
-                onAddPlace={handleAddPlaceSubmit} 
-                onClose={closeAllPopups}
-            />
+                <Route path="/main">
+                    <ProtectedRoute
+                        component={Main}
+                        onEditProfile={handleEditProfileClick} 
+                        onAddPlace={handleAddPlaceClick} 
+                        onEditAvatar={handleEditAvatarClick} 
+                        cards={cards}
+                        onCardLike={handleCardLike}
+                        onCardClick={handleCardClick}
+                        onCardDelete={handleCardDelete}
+                    />
 
-            <EditAvatarPopup 
-                isOpen={isEditAvatarPopupOpen} 
-                onUpdateAvatar={handleUpdateAvatar} 
-                onClose={closeAllPopups} 
-            /> 
+                    <EditProfilePopup 
+                        isOpen={isEditProfilePopupOpen} 
+                        onUpdateUser={handleUpdateUser} 
+                        onClose={closeAllPopups}
+                    />  
 
-            <ImagePopup 
-                link={selectedCard} 
-                onClose={closeAllPopups}
-            />
+                    <AddPlacePopup 
+                        isOpen={isAddPlacePopupOpen} 
+                        onAddPlace={handleAddPlaceSubmit} 
+                        onClose={closeAllPopups}
+                    />
+
+                    <EditAvatarPopup 
+                        isOpen={isEditAvatarPopupOpen} 
+                        onUpdateAvatar={handleUpdateAvatar} 
+                        onClose={closeAllPopups} 
+                    /> 
+
+                    <ImagePopup 
+                        link={selectedCard} 
+                        onClose={closeAllPopups}
+                    />
+                </Route>
+
+                <Route path="/login">
+                    <LogIn />
+                </Route>
+
+                <Route path="/register">
+                    <Register />
+                </Route>
+
+                <Route exact path="/">
+                    {loggedIn ? <Redirect to="/main" /> : <Redirect to="/login" />}
+                </Route>
+
+            </Switch>
             
             <Footer />      
+            
         </CurrentUserContext.Provider>
     );
 }
 
-export default App;
+export default withRouter(App);

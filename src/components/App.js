@@ -1,4 +1,3 @@
-
 import { Route, Switch, Redirect, withRouter } from 'react-router-dom';
 import Header from './Header';
 import EditProfilePopup from './EditProfilePopup';
@@ -21,34 +20,28 @@ function App(props) {
     const [isEditProfilePopupOpen, setIsEditProfilePopupOpen] = React.useState(false);
     const [isAddPlacePopupOpen, setIsAddPlacePopupOpen] = React.useState(false);
     const [isEditAvatarPopupOpen, setIsEditAvatarPopupOpen] = React.useState(false);
+    const [isInfoTooltipOpen, setIsInfoTooltipOpen] = React.useState(false);
     const [currentUser, setCurrentUser] = React.useState({name:'',link:'',about:''});
     const [selectedCard, setSelectedCard] = React.useState(null);
     const [cards, setCards] = React.useState([]);
-    const [loggedIn,setLogIn] = React.useState(false);
+    const [email,setEmail] = React.useState('');
+    const [isRegisered, setIsRegitered] = React.useState(false);
     
-    const handleEditProfileClick = () => { setIsEditProfilePopupOpen (true); } 
-    const handleAddPlaceClick = () => { setIsAddPlacePopupOpen (true); } 
-    const handleEditAvatarClick = () => { setIsEditAvatarPopupOpen(true); } 
-    const handleCardClick = (link) => { setSelectedCard(link); }
+    const handleEditProfileClick = () => { setIsEditProfilePopupOpen(true) } 
+    const handleAddPlaceClick = () => { setIsAddPlacePopupOpen(true) } 
+    const handleEditAvatarClick = () => { setIsEditAvatarPopupOpen(true) } 
+    const handleInfoTolltipOpen = () => { setIsInfoTooltipOpen(true) };
+    const handleCardClick = (link) => { setSelectedCard(link) }
 
     React.useEffect(
-        ()=>{
-            //загружаем профиль пользователя и карточки 
-            Promise.all([Api.getProfile(), Api.getInitialCards()])
-                .then(([profile, cards]) => {
-                    //отображаем информацию профиля    
-                    setCurrentUser(profile);
-                    //рисуем все карточки
-                    setCards(cards);
-            })
-            .catch(err => { console.log(err) }); 
-        },[]
+        ()=>{handleTokenCheck()},[]
     );
-        
+
     const closeAllPopups = () => {
         setIsEditProfilePopupOpen(false);
         setIsAddPlacePopupOpen(false);
         setIsEditAvatarPopupOpen(false);
+        setIsInfoTooltipOpen(false);
         setSelectedCard(null);
     }
 
@@ -59,7 +52,6 @@ function App(props) {
             closeAllPopups();
         })
         .catch(err=>console.log(err))
-        
     }
 
     function handleUpdateAvatar(avatarUrl){
@@ -101,33 +93,67 @@ function App(props) {
     }
 
     function handleTokenCheck(){
-        const jwt = localStorage.getItem('jwt');
-        if (jwt) {
+        const token = localStorage.getItem('token');
+        if (token) {
             // проверяем токен пользователя
-            Auth.checkToken(jwt)
+            Auth.checkToken(token)
             .then((res) => {
                 if (res) { 
-                    setLogIn(true,()=>props.history.push("/main")) 
+                    handleLogin(res.data.email); 
                 }
             })
         }; 
     }
-      
-    function handleLogin (){
-        setLogIn(true);
+
+    function handleRegister (email,password) {
+        Auth.register(email, password)
+        .then((res) => {
+            setIsRegitered(!res.error);
+            handleInfoTolltipOpen();
+        });
     }
-      
+
+    function handleAuthorize(email,password) {
+        Auth.authorize(email, password)
+        .then((data) => {
+            if (data.token){
+                localStorage.setItem('token',data.token);
+                handleLogin(email);
+            }
+        })
+    }
+    
+    function handleSignOut() {
+        setCards([]);
+        setEmail('');
+        localStorage.removeItem('token');
+    }
+
+    function handleLogin(email){
+        setEmail(email);
+        props.history.push('/main')
+        //загружаем профиль пользователя и карточки 
+        Promise.all([Api.getProfile(), Api.getInitialCards()])
+        .then(([profile, cards]) => {
+            //отображаем информацию профиля    
+            setCurrentUser(profile);
+            //рисуем все карточки
+            setCards(cards);
+        })
+        .catch(err => { console.log(err) }); 
+    }
 
     return (
         <CurrentUserContext.Provider value={currentUser}>
 
-            <Header />
+            <Header emal={email} onSignOut={handleSignOut}/>
 
             <Switch>
 
                 <Route path="/main">
                     <ProtectedRoute
                         component={Main}
+                        email={email}
                         onEditProfile={handleEditProfileClick} 
                         onAddPlace={handleAddPlaceClick} 
                         onEditAvatar={handleEditAvatarClick} 
@@ -156,21 +182,23 @@ function App(props) {
                     /> 
 
                     <ImagePopup 
-                        link={selectedCard} 
-                        onClose={closeAllPopups}
+                        isOpen={selectedCard} 
+                        onClose={closeAllPopups} 
                     />
+
                 </Route>
 
-                <Route path="/login">
-                    <LogIn />
+                <Route path="/sign-in">
+                    <LogIn onAuthorise={handleAuthorize} />
                 </Route>
 
-                <Route path="/register">
-                    <Register />
+                <Route path="/sign-up">
+                    <Register onRegister={handleRegister}/>
+                    <InfoToolTip isOpen={isInfoTooltipOpen} isRegisered={isRegisered} onClose={closeAllPopups}/>
                 </Route>
 
                 <Route exact path="/">
-                    {loggedIn ? <Redirect to="/main" /> : <Redirect to="/login" />}
+                    {email ? <Redirect to="/main" /> : <Redirect to="/sign-in" />}
                 </Route>
 
             </Switch>

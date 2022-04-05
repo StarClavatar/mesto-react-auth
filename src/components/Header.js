@@ -6,8 +6,8 @@ import Vector from '../images/Vector.svg';
 function Header(props) {
     const location = useLocation();
     
-    let link 
-    let linkText
+    let link=''; 
+    let linkText=''
 
     if (location.pathname==='/sign-in') {
         link = 'sign-up';
